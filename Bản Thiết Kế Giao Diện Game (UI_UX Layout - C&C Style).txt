@@ -1,0 +1,102 @@
+﻿ĐẶC TẢ THIẾT KẾ GIAO DIỆN: ĐẠI CHIẾN LÀNG ĐẠI HỌC (C&C SIDEBAR STYLE)
+Phong cách giao diện lấy cảm hứng trực tiếp từ trung tâm chỉ huy EVA (Electronic Video Agent) kinh điển của dòng game Command & Conquer / Red Alert:
+* Khu vực tác chiến (Battlefield Canvas): Chiếm trọn    không gian bên trái, hỗ trợ phóng to/thu nhỏ và di chuột vô tận.
+* Thanh chỉ huy tác chiến (Command Sidebar): Cố định ở cạnh phải   , tích hợp toàn bộ radar, tình báo đối thủ, điều phối viện binh và bảng nạp điểm.
+I. TỔNG THỂ BỐ CỤC KHÔNG GIAN (MASTER WIREFRAME)
+┌───────────────────────────────────────────────────────────────────┬───────────────────────────┐
+│ [TOP STATUS BAR] Trận đấu: 14:25 | Đất đã mở: 42.8% | FPS: 60      │ [MINIMAP RADAR VIEW]      │
+├───────────────────────────────────────────────────────────────────┤ 250 x 250 px              │
+│                                                                   │ - Quét 1.000.000 ô pixel  │
+│                                                                   │ - Camera viewport box     │
+│                                                                   │ - Click để nhảy tọa độ    │
+│                                                                   ├───────────────────────────┤
+│                                                                   │ [ACTIVE FACTION / SCHOOL] │
+│                                                                   │ [Logo] ĐẠI HỌC BÁCH KHOA  │
+│                    BATTLEFIELD CANVAS                             │ Quân dự trữ: 12,450 🛡️    │
+│                   (Pixi.js WebGL Engine)                          │ Lãnh thổ: 18,200 ô (Top 1)│
+│                                                                   ├───────────────────────────┤
+│                - Pan / Drag chuột mượt mà                         │ [CAMPUS TECH BUFFS]       │
+│                - Zoom mượt 0.05x -> 5.0x                          │ [NVH] [GDQP] [Chợ Đêm]    │
+│                - Lãnh thổ đổi màu theo thời gian thực             │ (Icon sáng khi sở hữu)    │
+│                - Mega-Emblem 50x50 hiển thị mờ                    ├───────────────────────────┤
+│                - Hiệu ứng khói lửa / giao tranh biên giới         │ [EVA ACTION STRIP]        │
+│                                                                   │ [⚡ Khai hoang] [🛡️ Cố thủ]│
+│                                                                   │ [🎯 Đánh chiếm] [🚩 Cắm cờ]│
+│                                                                   ├───────────────────────────┤
+│                                                                   │ [EXTERNAL INGESTION HUB]  │
+│                                                                   │ Nhập điểm hoạt động SV:   │
+│                                                                   │ [  500  ] -> [ + NẠP QUÂN]│
+│                                                                   ├───────────────────────────┤
+│                                                                   │ [LIVE BATTLE TICKER]      │
+│                                                                   │ > BK chiếm Nhà Văn Hóa SV │
+│                                                                   │ > UIT bật cờ Mega 50x50!  │
+│                                                                   ├───────────────────────────┤
+│ [CAMERA CONTROLS: Zoom Slider | Reset Cam | Fit All]              │ [BOT & SIMULATION ENGINE] │
+│                                                                   │ [▶ Auto-Play] Tốc độ: 2x  │
+└───────────────────────────────────────────────────────────────────┴───────────────────────────┘
+
+II. CHI TIẾT TỪNG PHÂN VÙNG GIAO DIỆN
+1. Battlefield Canvas (Khu vực Sa bàn Chính - Bên trái)
+   * Kích thước: Chiếm phần lớn chiều ngang màn hình (flex-1 h-screen).
+   * Đặc tính tương tác:
+   * Chuột trái: Click vào ô biên giới để khai hoang hoặc tấn công; giữ chuột rê để vạch đường mở rộng quân liên tục.
+   * Chuột phải: Giữ và kéo để Pan camera khắp bản đồ; hoặc click chuột phải vào ô đồng minh để nhanh chóng đồn trú (Fortify).
+   * Cuộn chuột (Wheel): Zoom in sâu để xem chi tiết từng số lính và ranh giới; Zoom out xa để quan sát toàn bộ các khối màu trường và biểu tượng cờ   .
+      * Cụm phím nổi dưới góc trái (Overlay HUD):
+      * Thanh trượt mức Zoom (0.05x đến 5x).
+      * Nút HQ Hotkey (Phím cách Space): Lướt nhanh camera về ngay Thủ phủ trường của mình.
+      * Chế độ lớp phủ (Toggle Overlays): Bật/tắt lưới tọa độ (Grid Lines), bật/tắt hiển thị số quân trên ô.
+2. Command Sidebar (Cột Chỉ Huy C&C - Bên phải)
+Được bố cục theo chiều dọc với tông màu tối kim loại công nghệ cao (Military Sci-fi / Dark Tactical):
+A. Radar Minimap (Góc trên cùng)
+      * Quy cách: Kích thước cố định   .
+      * Hiển thị:
+         * Toàn bộ 1.000.000 ô đất thu nhỏ thành dạng pixel màu nhận diện của 10 trường.
+         * Các địa danh trung lập (POIs) nhấp nháy chấm vàng/trắng.
+         * Khung viền hình chữ nhật màu xanh neon đại diện cho tầm nhìn camera hiện tại.
+         * Tương tác: Click bất kỳ đâu trên Minimap, camera chính sẽ lướt mượt tức thì đến vị trí đó.
+B. Thẻ Thông Tin Phe Phái (Active School Card)
+         * Hiển thị quốc huy / logo tròn của trường đang chọn, mã viết tắt (BK, UIT, USSH, HCMUS...) và thanh đo thị phần lãnh thổ (% Map Dominated).
+         * Ví Quân Dự Trữ (Troop Depots): Số quân lớn nổi bật (ví dụ: 15,400 troops), sẵn sàng điều động khi click sa bàn.
+C. Khay Biểu Tượng Bùa Lợi (Capturable Tech Buffs)
+         * 10 ô vuông nhỏ chứa icon của 10 địa danh Làng Đại học:
+         * Trạng thái xám mờ: Chưa chiếm được.
+         * Trạng thái phát sáng rực rỡ (Glow Effect): Trường đang làm chủ địa danh và được hưởng buff tương ứng (như giảm giá khai hoang từ Nhà Văn Hóa, tăng thủ từ Khu GDQP).
+         * Di chuột vào icon sẽ hiện Tooltip giải thích ý nghĩa và lịch sử sinh viên của địa danh.
+D. Bảng Nạp Điểm Hoạt Động SV (External Ingestion Panel)
+         * Dành riêng cho Ban tổ chức / Trọng tài nạp điểm trực tiếp tại sự kiện:
+         * Dropdown chọn trường nhận quân.
+         * Ô nhập số điểm sinh viên thực tế (ví dụ: 100 lượt check-in, giải nhất thể thao    nhập    điểm).
+         * Nút "NẠP VIỆN BINH" (kèm âm thanh tiếp viện "Reinforcements Arrived"). Nếu trường có Chợ Đêm, số quân nhận thực tế sẽ tự động nhảy cộng thêm   .
+E. Bảng Xếp Hạng & Nhật Ký Tác Chiến (Leaderboard & Battle Log)
+            * Bảng xếp hạng rút gọn (Top 5 Trường): Tự động sắp xếp theo tổng số ô đang kiểm soát, kèm thanh % tiến trình đạt mốc   .
+            * Battle Ticker (Dòng tin tức quân sự cuộn tự động):
+               * [14:20:05] UIT đã hoàn thành đại cờ 50x50 tại khu vực Đồi Thông!
+               * [14:21:12] USSH đã tấn công và chiếm trọn Nhà Văn Hóa Sinh Viên!
+               * [14:22:30] ĐH Bách Khoa củng cố thêm 500 quân vào ranh giới giáp ranh!
+F. Bộ Điều Phối Mô Phỏng (Bot & Simulation Controls - Chân Sidebar)
+               * Công tắc bật/tắt Auto-Play AI Bots.
+               * Nút chỉnh tốc độ game: 1x (thực tế), 2x (trình diễn), 5x (tua nhanh mô phỏng).
+               * Nút khẩn cấp: Reset Map hoặc Equalize Troops (cân bằng quân toàn trường để bắt đầu hiệp mới).
+III. MẪU BẢNG MÀU GIAO DIỆN (TACTICAL PALETTE)
+Thành phần
+	Mã màu Hex
+	Ý nghĩa / Ứng dụng
+	Sidebar Background
+	#0D1117
+	Xám đen kim loại, tạo độ tương phản cao cho bản đồ
+	Panel Border & Grid
+	#21262D / #30363D
+	Đường kẻ kỹ thuật chia khối sắc sảo
+	Text Primary (EVA Voice)
+	#00FFA3 / #E6EDF3
+	Xanh dạ quang Terminal quân sự và trắng ngà dễ đọc
+	Alert / Combat Highlight
+	#FF4D4F
+	Cảnh báo khi đất của trường bị đối thủ công phá
+	Neutral POI Ping
+	#FADB14
+	Chấm sáng các địa danh Làng ĐH trên bản đồ radar
+	IV. CÔNG NGHỆ HIỆN THỰC HÓA GIAO DIỆN
+               * Khung UI: Dựng bằng React + Tailwind CSS. Sidebar là component HTML/CSS thuần túy đặt đè nổi (Overlay layout), không làm tiêu tốn tài nguyên vẽ của Pixi.js.
+               * Canvas Pixi.js: Giao tiếp 2 chiều với Sidebar thông qua một State Store nhẹ (Zustand hoặc React Context) để truyền toạ độ click, cập nhật quân số và phát hiệu ứng âm thanh.

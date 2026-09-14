@@ -1,0 +1,347 @@
+﻿AGENT MASTER PLAN: ĐẠI CHIẾN LÀNG ĐẠI HỌC (TERRITORY CLASH 1000x1000)
+CRITICAL DIRECTIVES FOR AGENT / AI ASSISTANT:
+1. KHÔNG TIẾT KIỆM TOKEN / QUOTA (NO SHORTCUTS): Viết trọn vẹn toàn bộ mã nguồn TypeScript, CSS và Schema. Tuyệt đối KHÔNG viết mã giả (pseudo-code), KHÔNG để lại các comment cắt giảm dạng // TODO: implement later, // ...rest of code, hay // logic goes here.
+2. STEP-BY-STEP VERIFICATION: Tuân thủ quy trình 4 giai đoạn. Hoàn thành kiểm tra logic ở mỗi giai đoạn trước khi chuyển sang giai đoạn kế tiếp.
+3. TƯ DUY KIẾN TRÚC RTS (Command & Conquer / Red Alert / AoE / StarCraft): Áp dụng mô hình mở rộng lãnh thổ liền mạch (Zerg Creep), kiểm soát các công trình kỹ thuật trung lập (Capturable Tech Buildings), và cơ chế viện binh ngoại vi (Reinforcements Dropped).
+4. HIỆU NĂNG TRÊN MA TRẬN 1.000.000 Ô: Tuyệt đối không dùng DOM/SVG hoặc mảng 2D lồng nhau array[y][x]. Mọi dữ liệu bản đồ phải quản lý bằng Flat TypedArrays (Uint8Array, Uint16Array).
+I. TỔNG QUAN HỆ THỐNG & TECH STACK
+* Platform: Web Game Client (Vite + React + TypeScript).
+* Đồ họa & Hiển thị: Pixi.js (v8) kết hợp @pixi/viewport (xử lý culling, pan, zoom mượt trên không gian    ô).
+* Cấu trúc Dữ liệu Tối ưu Bộ nhớ (In-Memory Core Engine):
+   * ownerMap = new Uint8Array(1000 * 1000): 0 = Đất hoang, 1..10 = ID Trường đại học. (Dung lượng: đúng 1 MB).
+   * troopMap = new Uint16Array(1000 * 1000): Quân số đóng giữ trên từng ô đất, tối đa 65.535 lính/ô. (Dung lượng: 2 MB).
+   * landmarkMap = new Uint8Array(1000 * 1000): 0 = Đất thường, 1..10 = Landmark ID. (Dung lượng: 1 MB).
+   * Công thức truy xuất tọa độ:   .
+      * Mô hình Trạng thái: Local-First State lưu trữ qua file JSON / LocalStorage, định dạng chuẩn hóa sẵn sàng chuyển đổi thành PostgreSQL/Supabase Database.
+II. HỆ THỐNG ĐỊA DANH BIỂU TƯỢNG LÀNG ĐẠI HỌC (LANDMARKS & POIs)
+Các địa danh mang tính biểu tượng của sinh viên ĐHQG-HCM được thiết lập như các Công trình Trung lập Chiến lược (Capturable Tech Buildings). Khi chiếm trọn diện tích và kết nối biên giới liền mạch về trường, trường sở hữu sẽ nhận bùa lợi (Buff) toàn bản đồ.
+ID
+	Địa danh huyền thoại
+	Kích thước
+	Chi phí chiếm
+	Bùa lợi (Buff Effect)
+	Ý nghĩa sinh viên
+	1
+	Nhà Văn Hóa Sinh Viên (Con Thuyền)
+	  
+
+	  
+
+	Khí Thế Sinh Viên: Giảm    quân hao tổn khi khai hoang ô đất trống mới.
+	Trung tâm sự kiện, nghệ thuật, rạp chiếu phim của toàn Làng.
+	2
+	Khu Quân Sự (Trung tâm GDQP-AN)
+	  
+
+	  
+
+	Kỷ Luật Thép: Tăng    chỉ số phòng thủ (  ) cho toàn bộ ô biên giới giáp ranh.
+	Khóa học quân sự huyền thoại, rèn luyện nếp sống thép.
+	3
+	Thư Viện Trung Tâm ĐHQG
+	  
+
+	  
+
+	Tầm Nhìn Tri Thức: Radar vệ tinh mở rộng tầm nhìn, phát hiện biến động quân địch từ xa    ô.
+	Thánh địa cày deadline, ôn thi thâu đêm.
+	4
+	Chợ Đêm Làng Đại Học
+	  
+
+	  
+
+	Tiếp Tế Xuyên Đêm: Mỗi lần nạp điểm từ sự kiện ngoại vi, trường được thưởng thêm    quân.
+	Thiên đường ẩm thực giá rẻ, trà sữa và đồ ăn vặt.
+	5
+	Cụm Hồ Đá & Hồ Thủy Xạ
+	  
+
+	  
+
+	Vực Sâu Bất Khả Xâm Phạm: Đối thủ khi đánh vào các ô quanh Hồ Đá sẽ chịu tổn thất tăng gấp đôi (  ).
+	Vách đá cheo leo, cảnh quan hùng vĩ nhưng hiểm trở bậc nhất.
+	6
+	Dốc Tình (Dốc Nghĩa Tình)
+	  
+
+	  
+
+	Tơ Duyên Tốc Hành: Tăng    tốc độ mở đường hành quân thẳng theo trục dọc của dốc.
+	Con đường hoa giấy nối liền UIT và USSH, nơi gieo mầm các chuyện tình sinh viên.
+	7
+	Ký Túc Xá Khu A & B
+	  
+
+	  
+
+	Đại Bản Doanh Nhân Lực: Mỗi 60 giây tự động chi viện    quân phòng thủ dự bị.
+	Hai khu nội trú khổng lồ quy tụ hơn 40.000 sinh viên sinh sống.
+	8
+	Ngã Ba 621
+	  
+
+	  
+
+	Cửa Ngõ Huyết Mạch (Choke Point): Cho phép đặt trạm chốt chặn giảm    quân di chuyển của địch băng qua ngã ba.
+	Trạm trung chuyển các tuyến xe buýt (08, 10, 19, 53) nối Làng ĐH với trung tâm thành phố.
+	9
+	Cánh Đồng Cỏ Lau
+	  
+
+	  
+
+	Gió Lộng Thao Trường: Giảm tiêu hao quân khi di chuyển qua vùng thảo nguyên thoáng đãng.
+	Nơi hóng gió, ngắm hoàng hôn và thả diều quen thuộc mỗi buổi chiều.
+	10
+	Tòa Nhà Điều Hành ĐHQG
+	  
+
+	  
+
+	Quyền Trượng Điều Hành: Giảm ngưỡng mở khóa hiển thị Logo trường từ    xuống còn    ô.
+	Đầu não hành chính quản lý toàn bộ hệ thống Đại học Quốc gia.
+	III. SCHEMA DỮ LIỆU CỤC BỘ (LOCAL JSON - DATABASE READY)
+Agent cần khởi tạo thư mục src/data/ với 3 tệp định dạng chuẩn hóa sau:
+1. src/data/schools.json (Thông tin 10 Trường Tham Chiến)
+[
+ {
+   "schoolId": 1,
+   "name": "Đại học Bách Khoa - ĐHQG-HCM",
+   "shortCode": "BK",
+   "color": "#0033A0",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 120, "y": 120 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.85, "expansionFocus": 0.6, "landmarkPriority": 0.5 }
+ },
+ {
+   "schoolId": 2,
+   "name": "Đại học Công nghệ Thông tin - ĐHQG-HCM",
+   "shortCode": "UIT",
+   "color": "#0055A5",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 880, "y": 120 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.4, "expansionFocus": 0.95, "landmarkPriority": 0.6 }
+ },
+ {
+   "schoolId": 3,
+   "name": "Đại học Khoa học Xã hội & Nhân văn",
+   "shortCode": "USSH",
+   "color": "#8B0000",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 880, "y": 880 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.5, "expansionFocus": 0.7, "landmarkPriority": 0.8 }
+ },
+ {
+   "schoolId": 4,
+   "name": "Đại học Khoa học Tự nhiên",
+   "shortCode": "HCMUS",
+   "color": "#007A3D",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 120, "y": 880 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.3, "expansionFocus": 0.5, "landmarkPriority": 0.95 }
+ },
+ {
+   "schoolId": 5,
+   "name": "Đại học Kinh tế - Luật",
+   "shortCode": "UEL",
+   "color": "#00205B",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 500, "y": 100 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.3, "expansionFocus": 0.4, "landmarkPriority": 0.7 }
+ },
+ {
+   "schoolId": 6,
+   "name": "Đại học Quốc Tế",
+   "shortCode": "IU",
+   "color": "#008080",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 500, "y": 900 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.6, "expansionFocus": 0.6, "landmarkPriority": 0.6 }
+ },
+ {
+   "schoolId": 7,
+   "name": "Đại học Sư phạm Kỹ thuật",
+   "shortCode": "HCMUTE",
+   "color": "#FF6600",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 100, "y": 500 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.75, "expansionFocus": 0.7, "landmarkPriority": 0.4 }
+ },
+ {
+   "schoolId": 8,
+   "name": "Đại học Nông Lâm TP.HCM",
+   "shortCode": "NLU",
+   "color": "#2E7D32",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 900, "y": 500 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.4, "expansionFocus": 0.8, "landmarkPriority": 0.5 }
+ },
+ {
+   "schoolId": 9,
+   "name": "Khoa Y - ĐHQG-HCM",
+   "shortCode": "MEDVNU",
+   "color": "#C2185B",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 300, "y": 300 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.2, "expansionFocus": 0.5, "landmarkPriority": 0.9 }
+ },
+ {
+   "schoolId": 10,
+   "name": "Đại học Thể dục Thể thao TP.HCM",
+   "shortCode": "USH",
+   "color": "#D32F2F",
+   "logoUrl": "data:image/svg+xml;base64,...",
+   "availableTroops": 1500,
+   "totalOwnedTiles": 0,
+   "spawnPoint": { "x": 700, "y": 700 },
+   "hasEmblemUnlocked": false,
+   "personality": { "aggression": 0.9, "expansionFocus": 0.5, "landmarkPriority": 0.3 }
+ }
+]
+
+
+2. src/data/landmarks.json
+Định nghĩa vị trí toạ độ   , kích thước và thuộc tính của 10 công trình biểu tượng theo bảng ở Phần II.
+IV. QUY TRÌNH THI CÔNG CHI TIẾT THEO 4 BƯỚC AGENTIC
+BƯỚC 1: CORE DATA ENGINE & VIEWPORT OPTIMIZATION
+      1. Thiết lập Core TypedArray:
+      * Tạo class GridEngine quản lý ownerMap, troopMap, và landmarkMap.
+      * Viết các phương thức getter/setter: getOwner(x, y), setOwner(x, y, id), getTroops(x, y), setTroops(x, y, count).
+      * Phương thức khởi tạo: Gán vị trí spawn cho 10 trường học. Mỗi trường khởi đầu bằng một vùng an toàn    ô xung quanh điểm Spawn, với ô trung tâm có    quân đồn trú.
+         2. Thiết lập Pixi.js Canvas & Culling Viewport:
+         * Tích hợp @pixi/viewport với các tính năng: kéo thả chuột (drag), cuộn chuột (pinch-to-zoom từ    đến   ), và di chuyển tự do.
+         * Viewport Culling (Tối quan trọng): Viết logic tính toán khung nhìn:
+const startX = Math.max(0, Math.floor(viewport.left / TILE_SIZE));
+const endX = Math.min(1000, Math.ceil(viewport.right / TILE_SIZE));
+const startY = Math.max(0, Math.floor(viewport.top / TILE_SIZE));
+const endY = Math.min(1000, Math.ceil(viewport.bottom / TILE_SIZE));
+
+
+         * Chỉ duyệt qua các ô nằm trong phạm vi hiển thị này để vẽ. Đảm bảo FPS luôn giữ vững ở mức 60.
+BƯỚC 2: GAMEPLAY LOOP & ADMIN CONTROL HUD
+            1. Cơ chế Tương tác Tiếp giáp (Adjacency Validation):
+            * Một ô    chỉ được phép thao tác nếu một trong 4 ô kề cận   ,   ,   ,    đang thuộc quyền sở hữu của trường người chơi.
+               2. Công thức Combat & Mở rộng:
+               * Mở đất hoang (owner == 0):  
+Tiêu hao    quân dự trữ từ ví của trường, chuyển owner = schoolId, gán troops = 1.
+               * Tấn công đất đối thủ (owner != schoolId):  
+Chỉ chiếm được ô nếu quân công huy động   . Số quân tổn thất của bên công được tính theo tỷ lệ cân bằng và số quân dư còn lại sẽ ở lại đồn trú.
+                  3. Admin Control HUD (Bảng điều khiển Mock & Trọng tài):
+                  * Xây dựng thanh công cụ Admin nổi:
+                  * Chọn Active School từ danh sách 10 trường.
+                  * External Point Injector (Nạp điểm ngoại vi): Nhập số điểm thu được từ hoạt động đời thực (ví dụ: hiến máu, thể thao, check-in)    nút "Nạp Quân"    cộng trực tiếp vào ví availableTroops của trường đã chọn (có nhân hệ số buff từ Chợ Đêm nếu đang sở hữu).
+                  * Công cụ hỗ trợ: Upload Logo mới (PNG/SVG sang Base64), Nút "Cấp tốc 10.000 quân", Nút "Reset Bản Đồ".
+BƯỚC 3: PROCEDURAL BORDERS, RADAR MINIMAP & LOGO   
+                     1. Thuật toán Phát hiện Vùng Đất    (Mega-Emblem Detection):
+                        * Xây dựng thuật toán kiểm tra Maximal Square trên ma trận nhị phân của trường đang kiểm soát.
+                        * Khi phát hiện một cụm ô liên tục chứa trọn vẹn một bounding box tối thiểu    ô (hoặc    nếu sở hữu Nhà Điều Hành):
+                           * Kích hoạt trạng thái hasEmblemUnlocked = true.
+                           * Dùng Pixi Sprite render logo trường bán trong suốt (  ) phủ toàn bộ vùng    ô đó.
+                           * Áp dụng viền ánh sáng chuyển sắc (Shader Glow) quanh biên giới vùng đất đại diện.
+                              2. Minimap Toàn cảnh (Radar View):
+                              * Dựng một canvas nhỏ    cố định ở góc dưới bên phải màn hình.
+                              * Quét thu nhỏ toàn bộ    ô dưới dạng điểm ảnh pixel (1 pixel ứng với    ô).
+                              * Vẽ khung chữ nhật đỏ đại diện cho tầm nhìn camera hiện tại.
+                              * Hỗ trợ click trực tiếp lên Minimap để phóng camera tức thì đến điểm chỉ định.
+BƯỚC 4: BOT AI DEMO & POLISH
+                                 1. Kiến trúc Bot Quản lý Tập Ô Biên giới (Frontier Tiles Set):
+                                 * Không quét 1 triệu ô khi Bot chạy. Mỗi trường duy trì một danh sách Set<number> chứa các ô biên giới có tiếp giáp với đất ngoài.
+                                 * Định kỳ mỗi   , Bot duyệt qua tập ô này và quyết định:
+                                    *    xác suất: Khai hoang đất trống hướng ra ngoài.
+                                    *    xác suất: Đánh chiếm đất đối thủ nếu đối phương ít quân phòng ngự.
+                                    *    xác suất: Đổ thêm quân phòng thủ (Fortify) vào các ô ranh giới tiếp xúc địch.
+                                       2. Game Feel & Micro-animations:
+                                       * Khi chiếm thành công một Landmark hoặc kích hoạt cờ   , tạo hiệu ứng sóng xung kích (Shockwave Ripple) lan tỏa từ tâm ra ngoài bán kính 50 ô.
+                                       * Khi giao tranh tại ô biên giới, hiển thị hiệu ứng văng hạt pixel (Particle Burst) theo màu sắc của trường bại trận.
+                                       * Tích hợp Web Audio API phát âm thanh khi cắm cờ hoặc chiếm công trình.
+V. CẤU TRÚC THƯ MỤC DỰ ÁN TIÊU CHUẨN
+campus-territory-clash/
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── public/
+│   └── assets/
+│       ├── logos/          # Logo PNG mặc định của 10 trường
+│       └── landmarks/      # Icon minh họa của 10 địa danh
+└── src/
+   ├── main.tsx
+   ├── App.tsx
+   ├── constants/
+   │   ├── balance.ts      # Toàn bộ tham số cân bằng, chi phí, buff
+   │   └── grid.ts         # Kích thước GRID_WIDTH, TILE_SIZE
+   ├── types/
+   │   ├── game.ts         # TypeScript interfaces
+   │   └── school.ts
+   ├── data/
+   │   ├── schools.json    # Dữ liệu 10 trường
+   │   └── landmarks.json  # Dữ liệu 10 địa danh Làng ĐH
+   ├── engine/
+   │   ├── GridEngine.ts   # Quản lý TypedArrays & logic chiếm ô
+   │   ├── LandmarkManager.ts # Logic buff & kiểm tra chiếm công trình
+   │   ├── EmblemDetector.ts  # Thuật toán quét vùng 50x50 ô
+   │   └── ViewportRenderer.ts # Tối ưu hóa Pixi.js batch render & culling
+   ├── bot/
+   │   ├── BotController.ts # Bộ điều phối 9 trường tự động
+   │   └── FrontierTracker.ts # Tối ưu hóa tập ô biên giới
+   └── components/
+       ├── AdminHUD.tsx    # Bảng nạp điểm & debug của trọng tài
+       ├── Minimap.tsx     # Bản đồ radar góc màn hình
+       └── LandmarkInfoModal.tsx # Thông tin chi tiết bùa lợi địa danh
+
+
+VI. BẢNG THAM SỐ CÂN BẰNG TẬP TRUNG (src/constants/balance.ts)
+Agent phải đặt toàn bộ các hằng số logic vào file này để tiện tinh chỉnh:
+export const GAME_BALANCE = {
+ GRID_WIDTH: 1000,
+ GRID_HEIGHT: 1000,
+ TILE_SIZE_PX: 16,
+ 
+ INITIAL_SPAWN_TROOPS: 300,
+ BASE_EXPANSION_COST: 2,
+ ATTACK_DIFFICULTY_MULTIPLIER: 1.25,
+ FORTIFY_TROOP_INCREMENT: 25,
+ 
+ EMBLEM_REQUIRED_BOX_SIZE: 50,
+ EMBLEM_DISCOUNTED_BOX_SIZE: 40, // Khi có Landmark Nhà Điều Hành
+ 
+ BOT_TICK_INTERVAL_MS: 500,
+ REINFORCEMENT_TICK_INTERVAL_MS: 60000, // Nhận viện binh thụ động từ KTX
+ PASSIVE_KTX_REINFORCEMENT: 50,
+};
+
+
+VII. ĐẦU RA YÊU CẦU CHO AGENT (ACCEPTANCE CRITERIA)
+                                          1. Khởi động tức thì: Dự án khởi chạy không có lỗi TypeScript (tsc --noEmit pass 100%).
+                                          2. Hiệu năng cao: Duy trì    khi zoom toàn cảnh    ô cũng như khi lướt camera qua các điểm nóng giao tranh.
+                                          3. Thao tác mượt mà trên Admin HUD:
+                                             * Có thể chọn bất kỳ trường nào, nạp điểm thủ công và trực tiếp điều quân chiếm đất.
+                                             * Bật nút Auto-Play Bots để chứng kiến các trường tự động triển khai chiến thuật bành trướng, tranh giành các địa danh Làng Đại học và mở rộng cờ lãnh thổ.

@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    user-select: none;
+    background-color: #0d1117;
+    color: #e6edf3;
+  }
+  /* Tactical military sci-fi font for headers and statistics */
+  .font-tactical {
+    font-family: 'Chakra Petch', sans-serif;
+    letter-spacing: 0.05em;
+  }
+  .font-mono-data {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom scrollbars for battle ticker and lists */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00ffa3;
+}
+
+/* Sci-fi Scanline effect */
+.scanline {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0, 255, 163, 0.04) 50%,
+    rgba(0, 255, 163, 0.04)
+  );
+  background-size: 100% 4px;
+}
+
+/* Radar pulse animation */
+@keyframes radar-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-sweep-effect {
+  animation: radar-sweep 4s linear infinite;
+}
+
+/* Glowing border effect */
+.glow-border-eva {
+  box-shadow: 0 0 10px rgba(0, 255, 163, 0.3), inset 0 0 10px rgba(0, 255, 163, 0.1);
+  border-color: #00ffa3;
+}
+
+.glow-alert-eva {
+  box-shadow: 0 0 12px rgba(255, 77, 79, 0.5);
+  border-color: #ff4d4f;
+}
+
+/* Retro Tactical Sci-Fi CRT Scanline Overlay */
+.crt-scanlines {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.3) 50%
+  ),
+  linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+}
+
+/* Glassmorphism Tactical Panel */
+.glass-panel {
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(48, 54, 61, 0.7);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* 45 degree Chamfered Corner Tactical Cut */
+.tactical-chamfer {
+  clip-path: polygon(
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  );
+}
+
