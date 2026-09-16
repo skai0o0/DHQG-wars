@@ -9,7 +9,6 @@ import { rasterizeLandmarkTextures } from '../assets/landmarkSprites';
 import { TacticalPatternManager } from './TacticalPatternManager';
 
 import terrainCampusPng from '../assets/generated/terrain_campus.png';
-import terrainFoundationPng from '../assets/generated/terrain_foundation.png';
 import terrainWaterPng from '../assets/generated/terrain_water.png';
 import { RoadNetwork } from './RoadNetwork';
 
@@ -36,9 +35,6 @@ export class ViewportRenderer {
   private terrainSprite: TilingSprite | null = null;
   public roadNetwork: RoadNetwork = new RoadNetwork();
   private roadLayer: Graphics = new Graphics();
-  private foundationContainer: Container = new Container();
-  private foundationTexture: Texture | null = null;
-  private foundationSprites: Map<number, Sprite> = new Map();
   private landmarkGroundShadowLayer: Graphics = new Graphics();
   private waterContainer: Container = new Container();
   private waterTexture: Texture | null = null;
@@ -208,8 +204,7 @@ export class ViewportRenderer {
       this.centerOnTile(firstSchool.spawnPoint.x, firstSchool.spawnPoint.y, 0.75);
     }
 
-    // Load Environment & Foundation Textures
-    this.foundationTexture = Texture.from(terrainFoundationPng);
+    // Load Environment Textures
     this.waterTexture = Texture.from(terrainWaterPng);
 
     // 1. Base Campus Seamless Ground Terrain (Tiling tactical green grass lawn)
@@ -248,7 +243,6 @@ export class ViewportRenderer {
     this.viewport.addChild(this.gridLayer);
     this.viewport.addChild(this.borderLayer);
     this.viewport.addChild(this.landmarkGroundShadowLayer);
-    this.viewport.addChild(this.foundationContainer);
     this.viewport.addChild(this.landmarkRingLayer);
     this.viewport.addChild(this.landmarkContainer);
     this.viewport.addChild(this.emblemContainer);
@@ -761,12 +755,10 @@ export class ViewportRenderer {
       );
 
       let sprite = this.landmarkSprites.get(lm.landmarkId);
-      const foundSprite = this.foundationSprites.get(lm.landmarkId);
       const waterSprite = this.waterSprites.get(lm.landmarkId);
 
       if (!inView) {
         if (sprite) sprite.visible = false;
-        if (foundSprite) foundSprite.visible = false;
         if (waterSprite) waterSprite.visible = false;
         return;
       }
@@ -782,10 +774,10 @@ export class ViewportRenderer {
       const ownerColor = isOwned ? (SCHOOL_COLORS[lm.currentOwner]?.int || 0x00FFA3) : 0xFADB14;
       const isContested = this.engine.isNearEnemy(lm.x, lm.y, lm.currentOwner);
 
-      // 1. Ground Contact Shadows & Foundations / Water Basins
+      // 1. Ground Contact Shadows & Water Basins (Centered at ground footprint cx, cy)
       if (lm.landmarkId === 5) {
         // Landmark 5: Hồ Đá (Quarry Lake) -> Deep aqua water shadow & water ripples
-        this.landmarkGroundShadowLayer.ellipse(cx, cy + ph * 0.20, pw * 0.65, ph * 0.46);
+        this.landmarkGroundShadowLayer.ellipse(cx, cy, pw * 0.62, ph * 0.40);
         this.landmarkGroundShadowLayer.fill({
           color: 0x02161A,
           alpha: 0.72,
@@ -799,80 +791,105 @@ export class ViewportRenderer {
           this.waterSprites.set(lm.landmarkId, wSprite);
         }
         if (wSprite) {
-          wSprite.position.set(cx, cy + ph * 0.16);
-          wSprite.width = pw * 1.28;
+          wSprite.position.set(cx, cy);
+          wSprite.width = pw * 1.25;
           wSprite.height = ph * 1.15;
           wSprite.alpha = 0.94;
           wSprite.visible = true;
         }
-        if (foundSprite) foundSprite.visible = false;
       } else {
-        // Standard Landmarks: Heavy Concrete Military Platform & Contact Drop Shadow
-        this.landmarkGroundShadowLayer.ellipse(cx, cy + ph * 0.32, pw * 0.90, ph * 0.50);
+        // Standard Landmarks: Solid multi-layered ground contact shadow
+        // Core ambient occlusion shadow directly under building footprint
+        this.landmarkGroundShadowLayer.ellipse(cx, cy, pw * 0.58, ph * 0.36);
         this.landmarkGroundShadowLayer.fill({
-          color: 0x05090C,
-          alpha: 0.52,
+          color: 0x010603,
+          alpha: 0.68,
         });
 
-        let fSprite = foundSprite;
-        if (!fSprite && this.foundationTexture) {
-          fSprite = new Sprite(this.foundationTexture);
-          fSprite.anchor.set(0.5, 0.62);
-          this.foundationContainer.addChild(fSprite);
-          this.foundationSprites.set(lm.landmarkId, fSprite);
-        }
-        if (fSprite) {
-          fSprite.position.set(cx, cy + ph * 0.30);
-          fSprite.width = pw * 1.72;
-          fSprite.height = ph * 1.35;
-          fSprite.alpha = 0.98;
-          fSprite.visible = true;
-        }
-        if (waterSprite) waterSprite.visible = false;
+        // Directional sunlight contact cast shadow (angled slightly to bottom-left)
+        this.landmarkGroundShadowLayer.ellipse(cx - pw * 0.05, cy + ph * 0.04, pw * 0.66, ph * 0.40);
+        this.landmarkGroundShadowLayer.fill({
+          color: 0x010402,
+          alpha: 0.38,
+        });
       }
 
-      // 2. Holographic Ground Capture Ring & Tactical Pulse
+      // 2. Holographic Ground Capture Ring & Tactical Pulse on ground plane (cx, cy)
       const ringPulse = 0.65 + 0.3 * Math.sin(now / 280);
       const ringAlpha = isContested ? (0.4 + 0.5 * Math.sin(now / 90)) : ringPulse;
-      const ringCenterY = lm.landmarkId === 5 ? cy + ph * 0.18 : cy + ph * 0.30;
 
-      // Inner tactical footprint fill
-      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.76, ph * 0.44);
+      // Inner ground footprint glow
+      this.landmarkRingLayer.ellipse(cx, cy, pw * 0.58, ph * 0.36);
       this.landmarkRingLayer.fill({
         color: isContested ? 0xFF4D4F : ownerColor,
-        alpha: 0.18,
+        alpha: 0.16,
       });
 
-      // Outer glowing ring
-      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.82, ph * 0.48);
+      // Outer primary glowing ring
+      this.landmarkRingLayer.ellipse(cx, cy, pw * 0.62, ph * 0.39);
       this.landmarkRingLayer.stroke({
         color: isContested ? 0xFF4D4F : ownerColor,
-        width: 3.5,
+        width: 3.0,
         alpha: ringAlpha,
       });
 
-      // 3. Render 2.5D Isometric Landmark Sprite
+      // Secondary perimeter notch ring (C&C sci-fi tactical style)
+      this.landmarkRingLayer.ellipse(cx, cy, pw * 0.70, ph * 0.44);
+      this.landmarkRingLayer.stroke({
+        color: isContested ? 0xFF4D4F : ownerColor,
+        width: 1.2,
+        alpha: ringAlpha * 0.50,
+      });
+
+      // 4 Tactical Ground Alignment Brackets (L-shaped corners framing the building)
+      const bx = pw * 0.68;
+      const by = ph * 0.42;
+      const arm = 14;
+      // Top corner
+      this.landmarkRingLayer.moveTo(cx - arm, cy - by);
+      this.landmarkRingLayer.lineTo(cx, cy - by - 4);
+      this.landmarkRingLayer.lineTo(cx + arm, cy - by);
+      // Bottom corner
+      this.landmarkRingLayer.moveTo(cx - arm, cy + by);
+      this.landmarkRingLayer.lineTo(cx, cy + by + 4);
+      this.landmarkRingLayer.lineTo(cx + arm, cy + by);
+      // Left corner
+      this.landmarkRingLayer.moveTo(cx - bx, cy - arm * 0.6);
+      this.landmarkRingLayer.lineTo(cx - bx - 4, cy);
+      this.landmarkRingLayer.lineTo(cx - bx, cy + arm * 0.6);
+      // Right corner
+      this.landmarkRingLayer.moveTo(cx + bx, cy - arm * 0.6);
+      this.landmarkRingLayer.lineTo(cx + bx + 4, cy);
+      this.landmarkRingLayer.lineTo(cx + bx, cy + arm * 0.6);
+      this.landmarkRingLayer.stroke({
+        color: isContested ? 0xFF4D4F : ownerColor,
+        width: 2.0,
+        alpha: ringAlpha * 0.75,
+      });
+
+      // 3. Render 2.5D Isometric Landmark Sprite (Base anchored solidly at cx, cy)
       if (!sprite) {
         const tex = this.landmarkTextures.get(lm.landmarkId);
         if (tex) {
           sprite = new Sprite(tex);
-          sprite.anchor.set(0.5, 0.84); // 3D anchor positioning base on ground
+          sprite.anchor.set(0.5, 0.86); // 3D anchor positioning base on ground
           this.landmarkContainer.addChild(sprite);
           this.landmarkSprites.set(lm.landmarkId, sprite);
         }
       }
 
       if (sprite) {
-        sprite.position.set(cx, cy + ph * 0.18);
-        // Overhang scale: sits securely on top of wide foundation deck
-        sprite.width = pw * 1.28;
-        sprite.height = ph * 1.48;
+        sprite.anchor.set(0.5, 0.86);
+        sprite.position.set(cx, cy);
+        sprite.width = pw * 1.35;
+        sprite.height = ph * 1.55;
         sprite.visible = true;
       }
 
-      // 4. Landmark Badge label (when zoomed in)
-      if (zoom >= 0.25) {
-        this.drawLandmarkBadge(cx, py - 18, lm.shortName, ownerColor);
+      // 4. Landmark Badge label (cleanly positioned above the building roof)
+      if (zoom >= 0.25 && sprite) {
+        const badgeY = cy - sprite.height * 0.86 - 16;
+        this.drawLandmarkBadge(cx, badgeY, lm.shortName, ownerColor);
       }
     });
   }
