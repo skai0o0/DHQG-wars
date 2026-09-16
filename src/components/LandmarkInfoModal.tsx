@@ -3,6 +3,7 @@ import { Landmark } from '../types/game';
 import { School } from '../types/school';
 import { X, Sparkles, Compass } from 'lucide-react';
 import { sounds } from '../sound/SoundManager';
+import { LANDMARK_ASSET_URLS } from '../assets/landmarkSprites';
 
 interface LandmarkInfoModalProps {
   landmark: Landmark | null;
@@ -42,7 +43,22 @@ export const LandmarkInfoModal: React.FC<LandmarkInfoModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* 2.5D Isometric Asset Preview */}
+          {LANDMARK_ASSET_URLS[landmark.landmarkId] && (
+            <div className="w-full flex flex-col items-center justify-center p-3 bg-[#0D1117] rounded border border-[#30363D] shadow-inner relative overflow-hidden group">
+              <div className="absolute inset-0 bg-radial from-[rgba(0,255,163,0.08)] to-transparent pointer-events-none" />
+              <img
+                src={LANDMARK_ASSET_URLS[landmark.landmarkId]}
+                alt={landmark.name}
+                className="h-36 object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)] transform transition duration-300 group-hover:scale-105"
+              />
+              <span className="text-[9px] font-mono-data text-[#8B949E] mt-1 tracking-wider uppercase">
+                2.5D ISOMETRIC ARCHITECTURE • COMFYUI FLUX
+              </span>
+            </div>
+          )}
+
           {/* Lore Section */}
           <div className="bg-[#0D1117] p-3 rounded border border-[#21262D]">
             <span className="text-[10px] uppercase font-mono-data text-[#8B949E] block mb-1">Ý Nghĩa Sinh Viên</span>

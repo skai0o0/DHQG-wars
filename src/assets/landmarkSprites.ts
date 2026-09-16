@@ -1,7 +1,34 @@
 import { Texture } from 'pixi.js';
 
+import landmark1Png from './generated/landmark_1.png';
+import landmark2Png from './generated/landmark_2.png';
+import landmark3Png from './generated/landmark_3.png';
+import landmark4Png from './generated/landmark_4.png';
+import landmark5Png from './generated/landmark_5.png';
+import landmark6Png from './generated/landmark_6.png';
+import landmark7Png from './generated/landmark_7.png';
+import landmark8Png from './generated/landmark_8.png';
+import landmark9Png from './generated/landmark_9.png';
+import landmark10Png from './generated/landmark_10.png';
+
 /**
- * Procedural 2.5D Isometric Vector Sprites for the 10 Iconic VNU Landmarks.
+ * High-Resolution 2.5D Isometric Assets generated from ComfyUI API (FLUX.1 Dev)
+ */
+export const LANDMARK_ASSET_URLS: Record<number, string> = {
+  1: landmark1Png,
+  2: landmark2Png,
+  3: landmark3Png,
+  4: landmark4Png,
+  5: landmark5Png,
+  6: landmark6Png,
+  7: landmark7Png,
+  8: landmark8Png,
+  9: landmark9Png,
+  10: landmark10Png,
+};
+
+/**
+ * Procedural 2.5D Isometric Vector Sprites for the 10 Iconic VNU Landmarks (Fallback).
  * Rendered with isometric projection, cast shadows, and depth overhangs.
  */
 export const LANDMARK_ISOMETRIC_SVGS: Record<number, string> = {
@@ -334,36 +361,60 @@ export const LANDMARK_ISOMETRIC_SVGS: Record<number, string> = {
 };
 
 /**
- * Cache and rasterize all landmark SVGs to Pixi Textures
+ * Cache and load all landmark assets to Pixi Textures.
+ * Prioritizes high-resolution 2.5D Isometric ComfyUI generated PNGs with SVG fallback.
  */
 export async function rasterizeLandmarkTextures(): Promise<Map<number, Texture>> {
   const map = new Map<number, Texture>();
 
-  for (const [idStr, svgString] of Object.entries(LANDMARK_ISOMETRIC_SVGS)) {
-    const id = Number(idStr);
-    try {
-      const tex = await new Promise<Texture>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 280;
-          canvas.height = 240;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            resolve(Texture.from(canvas));
-          } else {
-            resolve(Texture.from(img));
-          }
-        };
-        img.onerror = (err) => reject(err);
-        img.src = dataUrl;
-      });
-      map.set(id, tex);
-    } catch (e) {
-      console.warn(`Failed to rasterize landmark ${id}:`, e);
+  for (let id = 1; id <= 10; id++) {
+    const pngUrl = LANDMARK_ASSET_URLS[id];
+    let loaded = false;
+
+    if (pngUrl) {
+      try {
+        const tex = await new Promise<Texture>((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(Texture.from(img));
+          img.onerror = (err) => reject(err);
+          img.src = pngUrl;
+        });
+        map.set(id, tex);
+        loaded = true;
+      } catch (err) {
+        console.warn(`Failed to load ComfyUI PNG for landmark #${id}, falling back to SVG:`, err);
+      }
+    }
+
+    if (!loaded) {
+      const svgString = LANDMARK_ISOMETRIC_SVGS[id];
+      if (svgString) {
+        try {
+          const tex = await new Promise<Texture>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = 280;
+              canvas.height = 240;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                resolve(Texture.from(canvas));
+              } else {
+                resolve(Texture.from(img));
+              }
+            };
+            img.onerror = (err) => reject(err);
+            img.src = dataUrl;
+          });
+          map.set(id, tex);
+        } catch (e) {
+          console.warn(`Failed to rasterize fallback SVG for landmark #${id}:`, e);
+        }
+      }
     }
   }
 
