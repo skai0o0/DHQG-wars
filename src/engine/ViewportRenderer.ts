@@ -11,6 +11,7 @@ import { TacticalPatternManager } from './TacticalPatternManager';
 import terrainCampusPng from '../assets/generated/terrain_campus.png';
 import terrainFoundationPng from '../assets/generated/terrain_foundation.png';
 import terrainWaterPng from '../assets/generated/terrain_water.png';
+import { RoadNetwork } from './RoadNetwork';
 
 export interface ViewportRendererOptions {
   container: HTMLElement;
@@ -33,6 +34,8 @@ export class ViewportRenderer {
 
   // Environment & Terrain layers
   private terrainSprite: TilingSprite | null = null;
+  public roadNetwork: RoadNetwork = new RoadNetwork();
+  private roadLayer: Graphics = new Graphics();
   private foundationContainer: Container = new Container();
   private foundationTexture: Texture | null = null;
   private foundationSprites: Map<number, Sprite> = new Map();
@@ -134,7 +137,7 @@ export class ViewportRenderer {
     const W = GRID_CONFIG.WIDTH;
     const H = GRID_CONFIG.HEIGHT;
     const total = W * H;
-    const neutralColor = this.colorToUint32(16, 24, 28, 45);
+    const neutralColor = this.colorToUint32(0, 0, 0, 0); // 100% transparent so campus turf & road network shine through!
 
     for (let i = 0; i < total; i++) {
       const owner = this.engine.ownerMap[i];
@@ -142,7 +145,7 @@ export class ViewportRenderer {
         this.overviewData32[i] = neutralColor;
       } else {
         const sc = SCHOOL_COLORS[owner] || SCHOOL_COLORS[0];
-        this.overviewData32[i] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 210);
+        this.overviewData32[i] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 165);
       }
     }
     this.overviewCtx.putImageData(this.overviewImageData, 0, 0);
@@ -160,7 +163,7 @@ export class ViewportRenderer {
     await app.init({
       width,
       height,
-      backgroundColor: 0x101614,
+      backgroundColor: 0x2A451A,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
       antialias: false,
@@ -209,13 +212,13 @@ export class ViewportRenderer {
     this.foundationTexture = Texture.from(terrainFoundationPng);
     this.waterTexture = Texture.from(terrainWaterPng);
 
-    // 1. Base Campus Seamless Ground Terrain (Tiling grass, asphalt, stone campus pathways)
+    // 1. Base Campus Seamless Ground Terrain (Tiling tactical green grass lawn)
     this.terrainSprite = new TilingSprite({
       texture: Texture.from(terrainCampusPng),
       width: GRID_CONFIG.WORLD_WIDTH,
       height: GRID_CONFIG.WORLD_HEIGHT,
     });
-    this.terrainSprite.tileScale.set(0.38, 0.38);
+    this.terrainSprite.tileScale.set(0.48, 0.48);
 
     // Setup High-Tech Holographic Circuit Pattern
     this.circuitOverlay = new TilingSprite({
@@ -223,7 +226,7 @@ export class ViewportRenderer {
       width: GRID_CONFIG.WORLD_WIDTH,
       height: GRID_CONFIG.WORLD_HEIGHT,
     });
-    this.circuitOverlay.alpha = 0.14;
+    this.circuitOverlay.alpha = 0.12;
     this.circuitOverlay.blendMode = 'screen';
 
     // Setup Dynamic Fog of War
@@ -232,11 +235,12 @@ export class ViewportRenderer {
       width: GRID_CONFIG.WORLD_WIDTH,
       height: GRID_CONFIG.WORLD_HEIGHT,
     });
-    this.fogOverlay.alpha = 0.32;
+    this.fogOverlay.alpha = 0.28;
     this.fogOverlay.blendMode = 'screen';
 
     // Build Complete Layer Hierarchy in Depth Order
     this.viewport.addChild(this.terrainSprite);
+    this.viewport.addChild(this.roadLayer);
     this.viewport.addChild(this.baseLayer);
     this.viewport.addChild(this.waterContainer);
     this.viewport.addChild(this.circuitOverlay);
@@ -521,10 +525,10 @@ export class ViewportRenderer {
       this.engine.dirtyTiles.forEach(idx => {
         const owner = this.engine.ownerMap[idx];
         if (owner === 0) {
-          this.overviewData32[idx] = this.colorToUint32(16, 24, 28, 45);
+          this.overviewData32[idx] = this.colorToUint32(0, 0, 0, 0);
         } else {
           const sc = SCHOOL_COLORS[owner] || SCHOOL_COLORS[0];
-          this.overviewData32[idx] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 210);
+          this.overviewData32[idx] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 165);
         }
       });
       this.engine.dirtyTiles.clear();
@@ -559,7 +563,10 @@ export class ViewportRenderer {
     const startY = Math.max(0, Math.floor(this.viewport.top / TILE_SIZE));
     const endY = Math.min(GRID_CONFIG.HEIGHT, Math.ceil(this.viewport.bottom / TILE_SIZE));
 
-    // 4. Render High-Res Grid & Troop Labels
+    // 4. Render Strategic Road Network
+    this.roadNetwork.render(this.roadLayer, this.engine, zoom, timeSec);
+
+    // 5. Render High-Res Grid & Troop Labels
     this.renderHighResGrid(startX, endX, startY, endY, zoom);
 
     // 5. Render Neon Energy Borders
@@ -801,23 +808,23 @@ export class ViewportRenderer {
         if (foundSprite) foundSprite.visible = false;
       } else {
         // Standard Landmarks: Heavy Concrete Military Platform & Contact Drop Shadow
-        this.landmarkGroundShadowLayer.ellipse(cx, cy + ph * 0.28, pw * 0.68, ph * 0.40);
+        this.landmarkGroundShadowLayer.ellipse(cx, cy + ph * 0.32, pw * 0.90, ph * 0.50);
         this.landmarkGroundShadowLayer.fill({
           color: 0x05090C,
-          alpha: 0.58,
+          alpha: 0.52,
         });
 
         let fSprite = foundSprite;
         if (!fSprite && this.foundationTexture) {
           fSprite = new Sprite(this.foundationTexture);
-          fSprite.anchor.set(0.5, 0.65);
+          fSprite.anchor.set(0.5, 0.62);
           this.foundationContainer.addChild(fSprite);
           this.foundationSprites.set(lm.landmarkId, fSprite);
         }
         if (fSprite) {
-          fSprite.position.set(cx, cy + ph * 0.28);
-          fSprite.width = pw * 1.34;
-          fSprite.height = ph * 1.18;
+          fSprite.position.set(cx, cy + ph * 0.30);
+          fSprite.width = pw * 1.72;
+          fSprite.height = ph * 1.35;
           fSprite.alpha = 0.98;
           fSprite.visible = true;
         }
@@ -827,17 +834,17 @@ export class ViewportRenderer {
       // 2. Holographic Ground Capture Ring & Tactical Pulse
       const ringPulse = 0.65 + 0.3 * Math.sin(now / 280);
       const ringAlpha = isContested ? (0.4 + 0.5 * Math.sin(now / 90)) : ringPulse;
-      const ringCenterY = lm.landmarkId === 5 ? cy + ph * 0.18 : cy + ph * 0.26;
+      const ringCenterY = lm.landmarkId === 5 ? cy + ph * 0.18 : cy + ph * 0.30;
 
       // Inner tactical footprint fill
-      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.64, ph * 0.42);
+      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.76, ph * 0.44);
       this.landmarkRingLayer.fill({
         color: isContested ? 0xFF4D4F : ownerColor,
         alpha: 0.18,
       });
 
       // Outer glowing ring
-      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.68, ph * 0.45);
+      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.82, ph * 0.48);
       this.landmarkRingLayer.stroke({
         color: isContested ? 0xFF4D4F : ownerColor,
         width: 3.5,
@@ -849,17 +856,17 @@ export class ViewportRenderer {
         const tex = this.landmarkTextures.get(lm.landmarkId);
         if (tex) {
           sprite = new Sprite(tex);
-          sprite.anchor.set(0.5, 0.82); // 3D anchor positioning base on ground
+          sprite.anchor.set(0.5, 0.84); // 3D anchor positioning base on ground
           this.landmarkContainer.addChild(sprite);
           this.landmarkSprites.set(lm.landmarkId, sprite);
         }
       }
 
       if (sprite) {
-        sprite.position.set(cx, cy + ph * 0.20);
-        // Overhang scale: 35% wider and 55% taller than flat grid footprint to create 3D isometric height
-        sprite.width = pw * 1.35;
-        sprite.height = ph * 1.55;
+        sprite.position.set(cx, cy + ph * 0.18);
+        // Overhang scale: sits securely on top of wide foundation deck
+        sprite.width = pw * 1.28;
+        sprite.height = ph * 1.48;
         sprite.visible = true;
       }
 

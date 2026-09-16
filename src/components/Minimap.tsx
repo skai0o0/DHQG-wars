@@ -70,7 +70,7 @@ export const Minimap: React.FC<MinimapProps> = ({
       const W = GRID_CONFIG.WIDTH;
       const ratio = W / size; // 4 tiles per minimap pixel
       const ownerMap = engine.ownerMap;
-      const neutralCol = 0xFF182218; // Tactical mossy terrain tone
+      const neutralCol = 0xFF224822; // Tactical olive campus turf in ABGR
 
       for (let my = 0; my < size; my++) {
         const gy = Math.floor(my * ratio);
@@ -109,6 +109,33 @@ export const Minimap: React.FC<MinimapProps> = ({
       }
 
       ctx.putImageData(imgData, 0, 0);
+
+      // Render Tactical Road Network on Minimap Offscreen Canvas
+      const roads = [
+        [[340, 340], [500, 350], [640, 340], [650, 510], [510, 510], [440, 440], [340, 340]],
+        [[500, 100], [500, 350], [510, 510], [500, 800], [400, 850]],
+        [[800, 150], [746, 235], [800, 500], [850, 850], [650, 700], [500, 800]],
+        [[100, 300], [200, 200], [340, 340]],
+        [[100, 300], [150, 500], [240, 740], [150, 800], [400, 850], [500, 800]],
+        [[440, 440], [388, 588], [500, 800]],
+      ];
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(100, 116, 139, 0.75)';
+      ctx.lineWidth = 1.3;
+      roads.forEach(route => {
+        ctx.beginPath();
+        const startX = (route[0][0] / W) * size;
+        const startY = (route[0][1] / GRID_CONFIG.HEIGHT) * size;
+        ctx.moveTo(startX, startY);
+        for (let i = 1; i < route.length; i++) {
+          const rx = (route[i][0] / W) * size;
+          const ry = (route[i][1] / GRID_CONFIG.HEIGHT) * size;
+          ctx.lineTo(rx, ry);
+        }
+        ctx.stroke();
+      });
+      ctx.restore();
 
       // Render School Spawn Markers
       engine.schools.forEach(school => {
