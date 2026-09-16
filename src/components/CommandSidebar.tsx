@@ -85,20 +85,20 @@ export const CommandSidebar: React.FC<CommandSidebarProps> = ({
         </button>
       </div>
 
+      {/* Pinned Radar Minimap Header (Always Visible at top of EVA Sidebar) */}
+      <div className="p-2 border-b border-[#30363D] bg-[#090D13]/90 flex justify-center shrink-0">
+        <Minimap
+          engine={engine}
+          cameraLeft={cameraLeft}
+          cameraTop={cameraTop}
+          cameraRight={cameraRight}
+          cameraBottom={cameraBottom}
+          onNavigate={onNavigateMinimap}
+        />
+      </div>
+
       {/* Scrollable Command Strip Content */}
       <div className="flex-1 overflow-y-auto p-2.5 space-y-3">
-        {/* A. Radar Minimap (250x250) */}
-        <div className="pt-1">
-          <Minimap
-            engine={engine}
-            cameraLeft={cameraLeft}
-            cameraTop={cameraTop}
-            cameraRight={cameraRight}
-            cameraBottom={cameraBottom}
-            onNavigate={onNavigateMinimap}
-          />
-        </div>
-
         {/* B. Active School Card */}
         <ActiveSchoolCard
           school={activeSchool}

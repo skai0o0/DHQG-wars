@@ -8,6 +8,10 @@ import { Particle, Shockwave, ExpansionRipple, SmokeParticle, OrbitalBeam, Actio
 import { rasterizeLandmarkTextures } from '../assets/landmarkSprites';
 import { TacticalPatternManager } from './TacticalPatternManager';
 
+import terrainCampusPng from '../assets/generated/terrain_campus.png';
+import terrainFoundationPng from '../assets/generated/terrain_foundation.png';
+import terrainWaterPng from '../assets/generated/terrain_water.png';
+
 export interface ViewportRendererOptions {
   container: HTMLElement;
   engine: GridEngine;
@@ -26,6 +30,16 @@ export class ViewportRenderer {
   
   public app: Application | null = null;
   public viewport: Viewport | null = null;
+
+  // Environment & Terrain layers
+  private terrainSprite: TilingSprite | null = null;
+  private foundationContainer: Container = new Container();
+  private foundationTexture: Texture | null = null;
+  private foundationSprites: Map<number, Sprite> = new Map();
+  private landmarkGroundShadowLayer: Graphics = new Graphics();
+  private waterContainer: Container = new Container();
+  private waterTexture: Texture | null = null;
+  private waterSprites: Map<number, Sprite> = new Map();
 
   // Render layers
   private baseLayer: Container = new Container();
@@ -120,7 +134,7 @@ export class ViewportRenderer {
     const W = GRID_CONFIG.WIDTH;
     const H = GRID_CONFIG.HEIGHT;
     const total = W * H;
-    const neutralColor = this.colorToUint32(27, 34, 45, 255);
+    const neutralColor = this.colorToUint32(16, 24, 28, 45);
 
     for (let i = 0; i < total; i++) {
       const owner = this.engine.ownerMap[i];
@@ -128,7 +142,7 @@ export class ViewportRenderer {
         this.overviewData32[i] = neutralColor;
       } else {
         const sc = SCHOOL_COLORS[owner] || SCHOOL_COLORS[0];
-        this.overviewData32[i] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 255);
+        this.overviewData32[i] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 210);
       }
     }
     this.overviewCtx.putImageData(this.overviewImageData, 0, 0);
@@ -146,7 +160,7 @@ export class ViewportRenderer {
     await app.init({
       width,
       height,
-      backgroundColor: 0x090D13,
+      backgroundColor: 0x101614,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
       antialias: false,
@@ -191,6 +205,18 @@ export class ViewportRenderer {
       this.centerOnTile(firstSchool.spawnPoint.x, firstSchool.spawnPoint.y, 0.75);
     }
 
+    // Load Environment & Foundation Textures
+    this.foundationTexture = Texture.from(terrainFoundationPng);
+    this.waterTexture = Texture.from(terrainWaterPng);
+
+    // 1. Base Campus Seamless Ground Terrain (Tiling grass, asphalt, stone campus pathways)
+    this.terrainSprite = new TilingSprite({
+      texture: Texture.from(terrainCampusPng),
+      width: GRID_CONFIG.WORLD_WIDTH,
+      height: GRID_CONFIG.WORLD_HEIGHT,
+    });
+    this.terrainSprite.tileScale.set(0.38, 0.38);
+
     // Setup High-Tech Holographic Circuit Pattern
     this.circuitOverlay = new TilingSprite({
       texture: this.patternManager.circuitTexture,
@@ -209,12 +235,16 @@ export class ViewportRenderer {
     this.fogOverlay.alpha = 0.32;
     this.fogOverlay.blendMode = 'screen';
 
-    // Build Complete Layer Hierarchy
+    // Build Complete Layer Hierarchy in Depth Order
+    this.viewport.addChild(this.terrainSprite);
     this.viewport.addChild(this.baseLayer);
+    this.viewport.addChild(this.waterContainer);
     this.viewport.addChild(this.circuitOverlay);
     this.viewport.addChild(this.fogOverlay);
     this.viewport.addChild(this.gridLayer);
     this.viewport.addChild(this.borderLayer);
+    this.viewport.addChild(this.landmarkGroundShadowLayer);
+    this.viewport.addChild(this.foundationContainer);
     this.viewport.addChild(this.landmarkRingLayer);
     this.viewport.addChild(this.landmarkContainer);
     this.viewport.addChild(this.emblemContainer);
@@ -490,8 +520,12 @@ export class ViewportRenderer {
     if (this.engine.dirtyTiles.size > 0) {
       this.engine.dirtyTiles.forEach(idx => {
         const owner = this.engine.ownerMap[idx];
-        const sc = SCHOOL_COLORS[owner] || SCHOOL_COLORS[0];
-        this.overviewData32[idx] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 255);
+        if (owner === 0) {
+          this.overviewData32[idx] = this.colorToUint32(16, 24, 28, 45);
+        } else {
+          const sc = SCHOOL_COLORS[owner] || SCHOOL_COLORS[0];
+          this.overviewData32[idx] = this.colorToUint32(sc.rgb[0], sc.rgb[1], sc.rgb[2], 210);
+        }
       });
       this.engine.dirtyTiles.clear();
       this.overviewCtx.putImageData(this.overviewImageData, 0, 0);
@@ -703,10 +737,11 @@ export class ViewportRenderer {
   }
 
   /**
-   * Renders 2.5D Isometric Landmark Sprites & Glowing Ground Capture Rings
+   * Renders 2.5D Isometric Landmark Sprites, Military Foundations & Glowing Ground Capture Rings
    */
   private renderLandmarks(startX: number, endX: number, startY: number, endY: number, zoom: number) {
     this.landmarkRingLayer.clear();
+    this.landmarkGroundShadowLayer.clear();
     const TILE_SIZE = GRID_CONFIG.TILE_SIZE;
     const now = Date.now();
 
@@ -719,9 +754,13 @@ export class ViewportRenderer {
       );
 
       let sprite = this.landmarkSprites.get(lm.landmarkId);
+      const foundSprite = this.foundationSprites.get(lm.landmarkId);
+      const waterSprite = this.waterSprites.get(lm.landmarkId);
 
       if (!inView) {
         if (sprite) sprite.visible = false;
+        if (foundSprite) foundSprite.visible = false;
+        if (waterSprite) waterSprite.visible = false;
         return;
       }
 
@@ -734,30 +773,78 @@ export class ViewportRenderer {
 
       const isOwned = lm.currentOwner > 0;
       const ownerColor = isOwned ? (SCHOOL_COLORS[lm.currentOwner]?.int || 0x00FFA3) : 0xFADB14;
-
-      // 1. Draw Glowing Ground Capture Ring beneath landmark
-      const ringPulse = 0.65 + 0.3 * Math.sin(now / 280);
       const isContested = this.engine.isNearEnemy(lm.x, lm.y, lm.currentOwner);
 
-      // Warning Strobe if contested
-      const ringAlpha = isContested ? (0.4 + 0.5 * Math.sin(now / 90)) : ringPulse;
+      // 1. Ground Contact Shadows & Foundations / Water Basins
+      if (lm.landmarkId === 5) {
+        // Landmark 5: Hồ Đá (Quarry Lake) -> Deep aqua water shadow & water ripples
+        this.landmarkGroundShadowLayer.ellipse(cx, cy + ph * 0.20, pw * 0.65, ph * 0.46);
+        this.landmarkGroundShadowLayer.fill({
+          color: 0x02161A,
+          alpha: 0.72,
+        });
 
-      // Ground Footprint Base Ellipse
-      this.landmarkRingLayer.ellipse(cx, cy + ph * 0.15, pw * 0.6, ph * 0.45);
+        let wSprite = waterSprite;
+        if (!wSprite && this.waterTexture) {
+          wSprite = new Sprite(this.waterTexture);
+          wSprite.anchor.set(0.5, 0.5);
+          this.waterContainer.addChild(wSprite);
+          this.waterSprites.set(lm.landmarkId, wSprite);
+        }
+        if (wSprite) {
+          wSprite.position.set(cx, cy + ph * 0.16);
+          wSprite.width = pw * 1.28;
+          wSprite.height = ph * 1.15;
+          wSprite.alpha = 0.94;
+          wSprite.visible = true;
+        }
+        if (foundSprite) foundSprite.visible = false;
+      } else {
+        // Standard Landmarks: Heavy Concrete Military Platform & Contact Drop Shadow
+        this.landmarkGroundShadowLayer.ellipse(cx, cy + ph * 0.28, pw * 0.68, ph * 0.40);
+        this.landmarkGroundShadowLayer.fill({
+          color: 0x05090C,
+          alpha: 0.58,
+        });
+
+        let fSprite = foundSprite;
+        if (!fSprite && this.foundationTexture) {
+          fSprite = new Sprite(this.foundationTexture);
+          fSprite.anchor.set(0.5, 0.65);
+          this.foundationContainer.addChild(fSprite);
+          this.foundationSprites.set(lm.landmarkId, fSprite);
+        }
+        if (fSprite) {
+          fSprite.position.set(cx, cy + ph * 0.28);
+          fSprite.width = pw * 1.34;
+          fSprite.height = ph * 1.18;
+          fSprite.alpha = 0.98;
+          fSprite.visible = true;
+        }
+        if (waterSprite) waterSprite.visible = false;
+      }
+
+      // 2. Holographic Ground Capture Ring & Tactical Pulse
+      const ringPulse = 0.65 + 0.3 * Math.sin(now / 280);
+      const ringAlpha = isContested ? (0.4 + 0.5 * Math.sin(now / 90)) : ringPulse;
+      const ringCenterY = lm.landmarkId === 5 ? cy + ph * 0.18 : cy + ph * 0.26;
+
+      // Inner tactical footprint fill
+      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.64, ph * 0.42);
       this.landmarkRingLayer.fill({
         color: isContested ? 0xFF4D4F : ownerColor,
-        alpha: 0.22,
+        alpha: 0.18,
       });
 
-      // Outer Glowing Ring
-      this.landmarkRingLayer.ellipse(cx, cy + ph * 0.15, pw * 0.62, ph * 0.47);
+      // Outer glowing ring
+      this.landmarkRingLayer.ellipse(cx, ringCenterY, pw * 0.68, ph * 0.45);
       this.landmarkRingLayer.stroke({
         color: isContested ? 0xFF4D4F : ownerColor,
         width: 3.5,
         alpha: ringAlpha,
       });
 
-      // 2. Render 2.5D Isometric Landmark Sprite
+      // 3. Render 2.5D Isometric Landmark Sprite
       if (!sprite) {
         const tex = this.landmarkTextures.get(lm.landmarkId);
         if (tex) {
@@ -769,14 +856,14 @@ export class ViewportRenderer {
       }
 
       if (sprite) {
-        sprite.position.set(cx, cy + ph * 0.22);
-        // Overhang scale: 30% wider and 50% taller than the flat grid footprint to create depth!
+        sprite.position.set(cx, cy + ph * 0.20);
+        // Overhang scale: 35% wider and 55% taller than flat grid footprint to create 3D isometric height
         sprite.width = pw * 1.35;
         sprite.height = ph * 1.55;
         sprite.visible = true;
       }
 
-      // 3. Landmark Badge label (when zoomed in)
+      // 4. Landmark Badge label (when zoomed in)
       if (zoom >= 0.25) {
         this.drawLandmarkBadge(cx, py - 18, lm.shortName, ownerColor);
       }

@@ -70,7 +70,7 @@ export const Minimap: React.FC<MinimapProps> = ({
       const W = GRID_CONFIG.WIDTH;
       const ratio = W / size; // 4 tiles per minimap pixel
       const ownerMap = engine.ownerMap;
-      const neutralCol = 0xFF1B222D;
+      const neutralCol = 0xFF182218; // Tactical mossy terrain tone
 
       for (let my = 0; my < size; my++) {
         const gy = Math.floor(my * ratio);
@@ -86,6 +86,24 @@ export const Minimap: React.FC<MinimapProps> = ({
           } else {
             const sc = SCHOOL_COLORS[owner] || SCHOOL_COLORS[0];
             data32[myOffset + mx] = (255 << 24) | (sc.rgb[2] << 16) | (sc.rgb[1] << 8) | sc.rgb[0];
+          }
+        }
+      }
+
+      // Render Hồ Đá water basin in offscreen minimap
+      const lake = engine.landmarks.find(l => l.landmarkId === 5);
+      if (lake) {
+        const lx = Math.floor((lake.x / W) * size);
+        const ly = Math.floor((lake.y / GRID_CONFIG.HEIGHT) * size);
+        const lw = Math.ceil((lake.width / W) * size);
+        const lh = Math.ceil((lake.height / GRID_CONFIG.HEIGHT) * size);
+        const lakeCol = 0xFF886A00; // #006A88 deep cyan/emerald water in ABGR
+        for (let dy = 0; dy < lh; dy++) {
+          for (let dx = 0; dx < lw; dx++) {
+            const pos = (ly + dy) * size + (lx + dx);
+            if (pos >= 0 && pos < size * size && ownerMap[(lake.y + dy * 4) * W + (lake.x + dx * 4)] === 0) {
+              data32[pos] = lakeCol;
+            }
           }
         }
       }
@@ -207,8 +225,8 @@ export const Minimap: React.FC<MinimapProps> = ({
           ctx.fillRect(mx - 1, my - 1, mw + 2, mh + 2);
           ctx.restore();
         } else {
-          // Standard landmark marker
-          ctx.fillStyle = '#FADB14';
+          // Standard landmark marker (aqua for Lake Hồ Đá, gold for military buildings)
+          ctx.fillStyle = lm.landmarkId === 5 ? '#00E5FF' : '#FADB14';
           ctx.fillRect(mx, my, mw, mh);
 
           if (lm.currentOwner > 0) {
